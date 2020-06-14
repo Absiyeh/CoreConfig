@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Security;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using TopLearn.Core.Services.Interfaces;
+
+namespace TopLearn.Core.Security
+{
+    public class permissionCheckerAttribute : AuthorizeAttribute, IAuthorizationFilter
+    {
+        private IPermissionService _permissionService;
+        private int _permissionId = 0;
+
+        public permissionCheckerAttribute(int permissionId )
+        {
+            _permissionId = permissionId;
+    
+        }
+        public void OnAuthorization(AuthorizationFilterContext context)
+        {
+            _permissionService = (IPermissionService)context.HttpContext.RequestServices.GetService(typeof(IPermissionService));
+
+            if (context.HttpContext.User.Identity.IsAuthenticated)/*اگر کاربر لاگین کرده باشد*/ 
+            {
+                string userName = context.HttpContext.User.Identity.Name;
+
+                if (!_permissionService.CheckPermission(_permissionId, userName))
+                {
+                    context.Result = new RedirectResult("/Login");
+
+                }
+            }
+            else
+            {
+                context.Result = new RedirectResult("/Login");
+
+            }
+        }
+    }
+}
